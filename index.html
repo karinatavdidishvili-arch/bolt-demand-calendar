@@ -8,39 +8,26 @@
 <style>
   *{box-sizing:border-box;margin:0;padding:0;}
   body{background:#f5f5f5;color:#1a1a1a;font-family:'Inter',sans-serif;font-size:13px;min-height:100vh;}
-
-  /* TOPBAR */
   .topbar{background:#1c2b1c;display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:44px;position:sticky;top:0;z-index:200;}
   .topbar-logo{color:#fff;font-weight:700;font-size:15px;letter-spacing:-0.02em;}
   .topbar-title{color:#aaa;font-size:13px;margin-left:16px;}
   .topbar-right{display:flex;align-items:center;gap:10px;}
-
-  /* FILTER PANEL */
   .filter-panel{background:#fff;border-radius:8px;padding:14px 20px;margin:14px 16px 0;border:1px solid #e8e8e8;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
   .filter-label{font-size:10px;font-weight:600;color:#888;letter-spacing:0.08em;text-transform:uppercase;white-space:nowrap;}
   .pill{padding:4px 12px;border-radius:20px;border:1px solid #ddd;background:#fff;color:#555;font-size:12px;font-weight:500;cursor:pointer;transition:all .12s;font-family:'Inter',sans-serif;white-space:nowrap;}
   .pill:hover{border-color:#aaa;color:#222;}
   .pill.active{background:#1c2b1c;border-color:#1c2b1c;color:#fff;}
-  .divider{width:1px;height:22px;background:#e8e8e8;flex-shrink:0;}
-
-  /* NAV */
-  .cal-nav{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 8px;margin:0 0;}
+  .cal-nav{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 8px;}
   .cal-nav-title{font-size:18px;font-weight:700;letter-spacing:-0.03em;}
   .nav-btn{background:#fff;border:1px solid #ddd;border-radius:6px;padding:5px 14px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;color:#555;}
   .nav-btn:hover{background:#f0f0f0;}
-
-  /* LEGEND */
   .legend{display:flex;align-items:center;gap:12px;padding:0 20px 10px;flex-wrap:wrap;}
   .legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#666;}
   .legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
-
-  /* CALENDAR GRID */
   .cal-wrap{margin:0 16px 24px;background:#fff;border-radius:8px;border:1px solid #e8e8e8;overflow:hidden;}
   .cal-header{display:grid;grid-template-columns:repeat(7,1fr);background:#1c2b1c;}
   .cal-header-cell{padding:8px 4px;text-align:center;font-size:11px;font-weight:600;color:#9ab;letter-spacing:0.06em;}
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);}
-
-  /* DAY CELL */
   .day{min-height:90px;border-right:1px solid #f0f0f0;border-bottom:1px solid #f0f0f0;padding:6px;position:relative;cursor:pointer;transition:background .1s;}
   .day:hover{background:#fafafa;}
   .day.other-month{background:#fafafa;}
@@ -51,8 +38,6 @@
   .day-num.weekend{color:#999;}
   .event-pill{font-size:9px;font-weight:600;padding:2px 5px;border-radius:3px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:block;letter-spacing:0.01em;}
   .more-events{font-size:9px;color:#888;margin-top:1px;}
-
-  /* MODAL */
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:500;display:none;align-items:center;justify-content:center;}
   .modal-overlay.open{display:flex;}
   .modal{background:#fff;border-radius:12px;padding:24px;max-width:420px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2);}
@@ -67,9 +52,6 @@
   .impact-med{background:#fff8e1;color:#b45309;}
   .impact-low{background:#f0faf5;color:#1c5e38;}
   .modal-close{float:right;background:none;border:none;font-size:18px;cursor:pointer;color:#888;margin-top:-4px;}
-
-  @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-  .day{animation:fadeIn .2s ease both;}
 </style>
 </head>
 <body>
@@ -77,423 +59,229 @@
 <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
   <div class="modal" id="modal-content"></div>
 </div>
-
 <script>
-// ─── CITY CONFIG ─────────────────────────────────────────────────────────────
 const CITIES = ["All Cities","Madrid","Barcelona","Málaga","Valencia","Alicante","Zaragoza","Toledo","A Coruña","Sevilla","Pamplona","Murcia"];
 const LTO_CITIES = ["Madrid","Barcelona","Málaga"];
 const NON_LTO_CITIES = ["Valencia","Alicante","Zaragoza","Toledo","A Coruña","Sevilla","Pamplona","Murcia"];
-
-const CITY_COLORS = {
-  "All Cities": "#1c2b1c",
-  "Madrid":     "#166534",
-  "Barcelona":  "#1d4ed8",
-  "Málaga":     "#b45309",
-  "Valencia":   "#c2410c",
-  "Alicante":   "#0e7490",
-  "Zaragoza":   "#7c3aed",
-  "Toledo":     "#92400e",
-  "A Coruña":   "#065f46",
-  "Sevilla":    "#b91c1c",
-  "Pamplona":   "#1e40af",
-  "Murcia":     "#6d28d9",
-};
-
-const CITY_BG = {
-  "Madrid":    "#dcfce7","Barcelona": "#dbeafe","Málaga":    "#fef3c7",
-  "Valencia":  "#ffedd5","Alicante":  "#cffafe","Zaragoza":  "#ede9fe",
-  "Toledo":    "#fef9c3","A Coruña":  "#d1fae5","Sevilla":   "#fee2e2",
-  "Pamplona":  "#dbeafe","Murcia":    "#ede9fe",
-  "National":  "#f0fdf4","Supply":    "#fff7ed",
-};
-
-// ─── EVENT TYPES ─────────────────────────────────────────────────────────────
-// impact: HIGH / MED / LOW
-// type: HOLIDAY | FESTIVAL | SPORT | SUPPLY | CULTURAL
+const CITY_COLORS = {"All Cities":"#1c2b1c","Madrid":"#166534","Barcelona":"#1d4ed8","Málaga":"#b45309","Valencia":"#c2410c","Alicante":"#0e7490","Zaragoza":"#7c3aed","Toledo":"#92400e","A Coruña":"#065f46","Sevilla":"#b91c1c","Pamplona":"#1e40af","Murcia":"#6d28d9"};
+const CITY_BG = {"Madrid":"#dcfce7","Barcelona":"#dbeafe","Málaga":"#fef3c7","Valencia":"#ffedd5","Alicante":"#cffafe","Zaragoza":"#ede9fe","Toledo":"#fef9c3","A Coruña":"#d1fae5","Sevilla":"#fee2e2","Pamplona":"#dbeafe","Murcia":"#ede9fe","National":"#f0fdf4","Supply":"#fff7ed"};
 
 const EVENTS = [
-  // ── NATIONAL HOLIDAYS ──────────────────────────────────────────────────────
-  {date:"2026-01-01", city:"National", type:"Bank Holiday", name:"New Year's Day", desc:"All cities closed. Strong late-night demand Dec 31 → Jan 1 early hours.", impact:"HIGH"},
-  {date:"2026-01-06", city:"National", type:"Bank Holiday", name:"Epiphany (Three Kings)", desc:"National holiday. Kings' Day parades in all cities on Jan 5 evening — high demand.", impact:"HIGH"},
-  {date:"2026-03-19", city:"National", type:"Bank Holiday", name:"St. Joseph's Day", desc:"National holiday (also La Cremà in Valencia — Fallas closing night).", impact:"MED"},
-  {date:"2026-03-29", city:"National", type:"Bank Holiday", name:"Palm Sunday", desc:"Start of Holy Week. Processions begin in Sevilla, Málaga, Murcia.", impact:"MED"},
-  {date:"2026-04-02", city:"National", type:"Bank Holiday", name:"Maundy Thursday", desc:"National holiday in most regions. Mass movement of people.", impact:"HIGH"},
-  {date:"2026-04-03", city:"National", type:"Bank Holiday", name:"Good Friday", desc:"National holiday. Major processions in Sevilla, Málaga. Roads busy.", impact:"HIGH"},
-  {date:"2026-05-01", city:"National", type:"Bank Holiday", name:"Labour Day", desc:"National holiday. Falls on Friday → long weekend. High leisure demand.", impact:"HIGH"},
-  {date:"2026-08-15", city:"National", type:"Bank Holiday", name:"Assumption of the Virgin", desc:"National holiday. Saturday — many city centre closures. Beach cities peak.", impact:"MED"},
-  {date:"2026-10-12", city:"National", type:"Bank Holiday", name:"National Day of Spain", desc:"Monday holiday. Military parade in Madrid. Long weekend across Spain.", impact:"MED"},
-  {date:"2026-11-02", city:"National", type:"Bank Holiday", name:"All Saints' Day (substitute)", desc:"Most regions move to Monday. Cemetery visits, quiet demand.", impact:"LOW"},
-  {date:"2026-12-07", city:"National", type:"Bank Holiday", name:"Constitution Day (bridge)", desc:"Many take bridge Dec 5–8. Strong travel demand.", impact:"MED"},
-  {date:"2026-12-08", city:"National", type:"Bank Holiday", name:"Immaculate Conception", desc:"National holiday. Combines with Dec 6 for a 4-day weekend.", impact:"MED"},
-  {date:"2026-12-25", city:"National", type:"Bank Holiday", name:"Christmas Day", desc:"National holiday. Quiet demand, family gatherings.", impact:"MED"},
-
-  // ── MADRID ─────────────────────────────────────────────────────────────────
-  {date:"2026-01-06", city:"Madrid", type:"Cultural Event", name:"Kings' Parade — Madrid", desc:"Largest Kings' Parade in Spain. Massive crowds on Gran Vía and city centre. High demand from 18:00–23:00.", impact:"HIGH"},
-  {date:"2026-05-02", city:"Madrid", type:"Regional Holiday", name:"Community of Madrid Day", desc:"Regional holiday. Long weekend May 1–3. High leisure rides.", impact:"MED"},
-  {date:"2026-05-15", city:"Madrid", type:"Festival", name:"San Isidro Festival", desc:"Madrid patron saint. Parades, concerts, fiestas in Retiro and La Latina. 5-day festival.", impact:"HIGH"},
-  {date:"2026-04-20", city:"Madrid", type:"Sports Event", name:"Mutua Madrid Open (Tennis)", desc:"ATP/WTA Masters 1000. Caja Mágica. Apr 20 – May 3. ~180k attendees. High demand south Madrid.", impact:"MED"},
-  {date:"2026-06-06", city:"Madrid", type:"Cultural Event", name:"Pope Leo XIV Visit — Madrid", desc:"~1.8M expected. Plaza de Cibeles Mass Jun 7. Massive road closures Jun 6–9. Huge last-mile demand.", impact:"HIGH"},
-  {date:"2026-07-04", city:"Madrid", type:"Supply Alert", name:"Summer Transport Strike Risk", desc:"Historically July–Aug sees EMT/Metro partial strikes. Monitor supply availability.", impact:"MED"},
-  {date:"2026-09-11", city:"Madrid", type:"Sports Event", name:"F1 Spanish Grand Prix — Madrid", desc:"New Madrid Street Circuit (Madring). Sep 11–13. Expected 200k+ attendees. Massive city impact.", impact:"HIGH"},
-  {date:"2026-10-12", city:"Madrid", type:"Cultural Event", name:"National Day Military Parade", desc:"Paseo del Prado. Road closures from early morning. High demand surrounding areas.", impact:"HIGH"},
-  {date:"2026-12-22", city:"Madrid", type:"Cultural Event", name:"El Gordo (Christmas Lottery)", desc:"National event broadcast live from Madrid. Festive atmosphere, increased rides.", impact:"LOW"},
-
-  // ── BARCELONA ──────────────────────────────────────────────────────────────
-  {date:"2026-02-26", city:"Barcelona", type:"Festival", name:"Mobile World Congress", desc:"MWC 2026. Feb 23–26. ~100k attendees from 200 countries. Fira Gran Via. High demand L'Hospitalet/airport.", impact:"HIGH"},
-  {date:"2026-04-23", city:"Barcelona", type:"Cultural Event", name:"Sant Jordi's Day", desc:"Barcelona's Valentine's Day. Books & roses. Massive street activity on Las Ramblas and Gothic Quarter.", impact:"MED"},
-  {date:"2026-06-09", city:"Barcelona", type:"Cultural Event", name:"Pope Leo XIV Visit — Barcelona", desc:"Jun 9–11. Sagrada Família Mass, Olympic Stadium, Montserrat. Road closures Eixample, Raval, Montjuïc.", impact:"HIGH"},
-  {date:"2026-06-24", city:"Barcelona", type:"Regional Holiday", name:"Sant Joan (Midsummer)", desc:"Regional holiday. Fireworks across city. Very high late-night demand Jun 23 → 24.", impact:"HIGH"},
-  {date:"2026-07-10", city:"Barcelona", type:"Cultural Event", name:"Primavera Sound", desc:"Major international music festival. ~70k per day. Parc del Fòrum. High demand northeast Barcelona.", impact:"HIGH"},
-  {date:"2026-09-24", city:"Barcelona", type:"Festival", name:"La Mercè Festival", desc:"Barcelona's biggest city festival. Sep 19–25. Free concerts, human towers, fire runs. Huge demand.", impact:"HIGH"},
-  {date:"2026-09-11", city:"Barcelona", type:"Cultural Event", name:"Diada de Catalunya", desc:"Catalan National Day. Large demonstrations on Passeig de Gràcia. Possible road closures.", impact:"MED"},
-
-  // ── SEVILLA ────────────────────────────────────────────────────────────────
-  {date:"2026-03-29", city:"Sevilla", type:"Festival", name:"Semana Santa — Sevilla", desc:"Mar 29 – Apr 5. Biggest Holy Week in Spain. Massive processions. Road closures throughout historic centre. Surge in demand.", impact:"HIGH"},
-  {date:"2026-04-20", city:"Sevilla", type:"Festival", name:"Feria de Abril — Sevilla", desc:"Apr 20 (Noche del Pescaíto) to Apr 26. 1,000+ casetas. Los Remedios fairground. High late-night demand all week.", impact:"HIGH"},
-  {date:"2026-06-04", city:"Sevilla", type:"Cultural Event", name:"Corpus Christi — Sevilla", desc:"Major religious procession. Historic centre road closures. Moderate demand impact.", impact:"MED"},
-
-  // ── VALENCIA ───────────────────────────────────────────────────────────────
-  {date:"2026-03-15", city:"Valencia", type:"Festival", name:"Las Fallas", desc:"Mar 15–19. Massive street festival. Mascletàs daily, burning of monuments on Mar 19. High demand all week.", impact:"HIGH"},
-  {date:"2026-07-25", city:"Valencia", type:"Regional Holiday", name:"Valencia Local Holiday", desc:"Regional holiday. Increased leisure demand.", impact:"LOW"},
-  {date:"2026-10-09", city:"Valencia", type:"Regional Holiday", name:"Valencian Community Day", desc:"Regional holiday. Parades and events in city centre.", impact:"MED"},
-
-  // ── MÁLAGA ─────────────────────────────────────────────────────────────────
-  {date:"2026-03-29", city:"Málaga", type:"Festival", name:"Semana Santa — Málaga", desc:"Mar 29 – Apr 5. One of the most important Holy Weeks in Spain. High tourism. Road closures historic centre.", impact:"HIGH"},
-  {date:"2026-08-15", city:"Málaga", type:"Festival", name:"Feria de Málaga", desc:"Aug 15–22. Largest summer fair in southern Spain. Day fair in Alameda, night fair in fairground. Very high demand.", impact:"HIGH"},
-
-  // ── PAMPLONA ───────────────────────────────────────────────────────────────
-  {date:"2026-07-06", city:"Pamplona", type:"Festival", name:"San Fermín — Running of the Bulls", desc:"Jul 6–14. International festival. ~1M visitors. Bull runs 08:00 daily. Road closures, huge crowds all day.", impact:"HIGH"},
-  {date:"2026-12-03", city:"Pamplona", type:"Regional Holiday", name:"Day of Navarre", desc:"Regional holiday. Combined with Dec 7–8 creates potential 6-day break.", impact:"MED"},
-
-  // ── ALICANTE ───────────────────────────────────────────────────────────────
-  {date:"2026-06-20", city:"Alicante", type:"Festival", name:"Hogueras de San Juan — Alicante", desc:"Jun 20–24. Fallas-like festival. Bonfire burning on Jun 24. High demand esp. beachfront zones.", impact:"HIGH"},
-
-  // ── MURCIA ─────────────────────────────────────────────────────────────────
-  {date:"2026-03-29", city:"Murcia", type:"Festival", name:"Semana Santa — Murcia", desc:"Mar 29 – Apr 5. Important Holy Week with famous floats. High demand and road closures.", impact:"MED"},
-  {date:"2026-09-07", city:"Murcia", type:"Festival", name:"Feria de Murcia (Romería de la Fuensanta)", desc:"Sept 7. Patron saint pilgrimage. Road closures and high demand in city centre.", impact:"MED"},
-
-  // ── A CORUÑA ───────────────────────────────────────────────────────────────
-  {date:"2026-07-25", city:"A Coruña", type:"Regional Holiday", name:"Galicia Day (St. James)", desc:"Regional holiday. Pilgrim arrivals to Santiago de Compostela peak. High demand airport and city.", impact:"HIGH"},
-  {date:"2026-08-01", city:"A Coruña", type:"Festival", name:"Noites do Porto / Summer Concerts", desc:"Series of major concerts in A Coruña port area. High late-night demand.", impact:"MED"},
-
-  // ── ZARAGOZA ───────────────────────────────────────────────────────────────
-  {date:"2026-10-12", city:"Zaragoza", type:"Festival", name:"Fiestas del Pilar — Zaragoza", desc:"Oct 12 coincides with National Day. Oct 9–18. Largest festival in Aragon. ~1M visitors. Very high demand.", impact:"HIGH"},
-
-  // ── TOLEDO ─────────────────────────────────────────────────────────────────
-  {date:"2026-06-04", city:"Toledo", type:"Cultural Event", name:"Corpus Christi — Toledo", desc:"Most important Corpus Christi in Spain. Massive procession. Tourist influx. Road closures.", impact:"HIGH"},
-
-  // ── SUPPLY EVENTS ──────────────────────────────────────────────────────────
-  {date:"2026-03-29", city:"Supply", type:"Supply Alert", name:"Easter Holiday — Driver Supply Drop", desc:"Expect 20–30% driver supply drop across all cities Easter week as drivers take holiday.", impact:"HIGH"},
-  {date:"2026-08-01", city:"Supply", type:"Supply Alert", name:"August Driver Supply Warning", desc:"August historically sees 15–25% supply drop in all cities. Demand spikes at airports and beach zones.", impact:"HIGH"},
-  {date:"2026-12-24", city:"Supply", type:"Supply Alert", name:"Christmas Eve — Supply Drop", desc:"Driver supply significantly reduced from afternoon. High demand for party rides.", impact:"HIGH"},
-  {date:"2026-12-31", city:"Supply", type:"Supply Alert", name:"New Year's Eve — Peak Demand", desc:"Highest demand night of the year. Surge pricing expected. Ensure maximum driver incentives.", impact:"HIGH"},
-
-  // ── BAD BUNNY — MADRID (10 concerts, 70k+ each, Estadio Metropolitano) ────
-  {date:"2026-05-30", city:"Madrid", type:"Sports Event", name:"Bad Bunny — Estadio Metropolitano", desc:"Night 1 of 10. 70,000+ capacity. Metro L7 Estadio Metropolitano. High demand 20:00–01:00 in Canillejas/San Blas area.", impact:"HIGH"},
-  {date:"2026-05-31", city:"Madrid", type:"Sports Event", name:"Bad Bunny — Estadio Metropolitano", desc:"Night 2 of 10. 70,000+ capacity. High late-night demand.", impact:"HIGH"},
-  {date:"2026-06-02", city:"Madrid", type:"Sports Event", name:"Bad Bunny — Estadio Metropolitano", desc:"Night 3 of 10. Coincides with Pope visit week — double demand pressure on Madrid.", impact:"HIGH"},
-  {date:"2026-06-03", city:"Madrid", type:"Sports Event", name:"Bad Bunny — Estadio Metropolitano", desc:"Night 4 of 10. 70,000+ per night. High late-night demand Canillejas area.", impact:"HIGH"},
-  {date:"2026-06-06", city:"Madrid", type:"Sports Event", name:"Bad Bunny — Estadio Metropolitano", desc:"Night 5 of 10. Coincides exactly with Pope arrival day — extreme dual demand pressure across Madrid.", impact:"HIGH"},
-  {date:"2026-06-07", city:"Madrid", type:"Sports Event", name:"Bad Bunny — Estadio Metropolitano", desc:"Night 6 of 10. Coincides with Pope Cibeles Mass day — historically unique dual mega-event. Madrid at max capacity.", impact:"HIGH"},
-  {date:"2026-06-10", city:"Madrid", type:"Sports Event", name:"Bad Bunny — Estadio Metropolitano", desc:"Night 7 of 10. 70,000+ capacity. High late-night demand.", impact:"HIGH"},
-  {date:"2026-06-11", city:"Madrid", type:"Sports Event", name:"Bad Bunny — Estadio Metropolitano", desc:"Night 8 of 10. High late-night demand Canillejas/San Blas area.", impact:"HIGH"},
-  {date:"2026-06-14", city:"Madrid", type:"Sports Event", name:"Bad Bunny — Estadio Metropolitano", desc:"Night 9 of 10. 70,000+ capacity.", impact:"HIGH"},
-  {date:"2026-06-15", city:"Madrid", type:"Sports Event", name:"Bad Bunny — Estadio Metropolitano", desc:"Night 10 of 10. Final night. Expect highest post-concert demand. 700,000+ total attendees across the 10 nights.", impact:"HIGH"},
-
-  // ── SAN JUAN — MULTI-CITY (Jun 23 eve + Jun 24) ──────────────────────────
-  {date:"2026-06-23", city:"Barcelona", type:"Festival", name:"Sant Joan Eve — Barcelona", desc:"Biggest night of the year in Barcelona. Bonfires across all beaches and neighbourhoods. Flame of Canigó ceremony at Plaça de Sant Jaume. Extremely high late-night demand 22:00–04:00.", impact:"HIGH"},
-  {date:"2026-06-24", city:"Barcelona", type:"Regional Holiday", name:"Sant Joan — Barcelona", desc:"Regional holiday. Quieter day after the big night. Some continued beach activity.", impact:"MED"},
-  {date:"2026-06-23", city:"Valencia", type:"Festival", name:"Noche de San Juan — Valencia", desc:"Massive beach celebrations at Malvarrosa, Patacona and Las Arenas. Bonfires, fireworks, bonfires. Very high demand 21:00–04:00.", impact:"HIGH"},
-  {date:"2026-06-23", city:"Málaga", type:"Festival", name:"Noche de San Juan — Málaga", desc:"Beach celebrations at La Misericordia and La Malagueta. Burning of 'Júas' figures. Sardine espetos tradition. High late-night demand.", impact:"HIGH"},
-  {date:"2026-06-23", city:"A Coruña", type:"Festival", name:"Noche de San Juan — A Coruña", desc:"One of the biggest San Juan celebrations in Galicia. Bonfires on beaches and city squares. High late-night demand.", impact:"HIGH"},
-  {date:"2026-06-23", city:"Madrid", type:"Festival", name:"Noche de San Juan — Madrid", desc:"Celebrations across city parks and squares. Less intense than coastal cities but notable demand increase late night.", impact:"MED"},
-  {date:"2026-06-20", city:"Alicante", type:"Festival", name:"Hogueras de San Juan — Opening", desc:"Festival opens Jun 20. Parade of bands (Entrada de Bandas). Festivities build across the week.", impact:"MED"},
-  {date:"2026-06-24", city:"Alicante", type:"Festival", name:"Hogueras de San Juan — La Cremà", desc:"Burning of monuments on the night of Jun 24. Biggest night of the festival. Extremely high demand beachfront zones.", impact:"HIGH"},
-
-  // ── FESTIVALS ────────────────────────────────────────────────────────────
-  {date:"2026-06-04", city:"Barcelona", type:"Cultural Event", name:"Primavera Sound — Day 1", desc:"Jun 4–6. 75,000/day at Parc del Fòrum. One of Europe's biggest music festivals. High demand northeast Barcelona (Poblenou/Sant Adrià). Metro L4.", impact:"HIGH"},
-  {date:"2026-06-05", city:"Barcelona", type:"Cultural Event", name:"Primavera Sound — Day 2", desc:"Day 2. 75,000 attendees at Parc del Fòrum. Strong late-night demand.", impact:"HIGH"},
-  {date:"2026-06-06", city:"Barcelona", type:"Cultural Event", name:"Primavera Sound — Day 3", desc:"Day 3 (final). 75,000 attendees. Biggest day usually. High demand from 16:00 to 03:00.", impact:"HIGH"},
-  {date:"2026-06-18", city:"Barcelona", type:"Cultural Event", name:"Sónar — Day 1", desc:"Jun 18–20. International electronic music festival. Sónar by Day at Fira Montjuïc, Sónar by Night at Fira Gran Via (L'Hospitalet). ~120k total attendees.", impact:"HIGH"},
-  {date:"2026-06-19", city:"Barcelona", type:"Cultural Event", name:"Sónar — Day 2", desc:"Day 2. Sónar by Night runs until 06:00. Extreme late-night demand L'Hospitalet area.", impact:"HIGH"},
-  {date:"2026-06-20", city:"Barcelona", type:"Cultural Event", name:"Sónar — Day 3", desc:"Day 3 (final). Full day + night programme. High demand across Barcelona and L'Hospitalet.", impact:"HIGH"},
-  {date:"2026-07-08", city:"Madrid", type:"Cultural Event", name:"Mad Cool Festival — Day 1", desc:"Jul 8–11. One of Spain's biggest music festivals. Foo Fighters, Twenty One Pilots, Nick Cave headlining. ~60k/day. Valdebebas area (north Madrid). Metro L8.", impact:"HIGH"},
-  {date:"2026-07-09", city:"Madrid", type:"Cultural Event", name:"Mad Cool Festival — Day 2", desc:"Day 2. Florence + The Machine, Lorde headlining. High demand north Madrid 16:00–03:00.", impact:"HIGH"},
-  {date:"2026-07-10", city:"Madrid", type:"Cultural Event", name:"Mad Cool Festival — Day 3", desc:"Day 3. Twenty One Pilots, Kings of Leon. High demand.", impact:"HIGH"},
-  {date:"2026-07-11", city:"Madrid", type:"Cultural Event", name:"Mad Cool Festival — Day 4 (Final)", desc:"Closing day. Nick Cave & The Bad Seeds, Pulp headlining. Highest demand of the 4 days typically.", impact:"HIGH"},
-  {date:"2026-07-08", city:"Barcelona", type:"Cultural Event", name:"Cruïlla Festival — Day 1", desc:"Jul 8–11. Parc del Fòrum. ~30k/day. Runs parallel to Mad Cool. Strong late-night demand northeast Barcelona.", impact:"MED"},
-  {date:"2026-07-09", city:"Málaga", type:"Cultural Event", name:"Weekend Beach Festival — Day 1", desc:"Jul 9–11. Torre del Mar beach (Málaga). Major beach music festival in Axarquía coast. High demand Málaga east zone.", impact:"MED"},
-  {date:"2026-05-15", city:"Sevilla", type:"Cultural Event", name:"Festival Interestelar Sevilla", desc:"May 15–16. Centro Andaluz de Arte Contemporáneo. Indie/pop national acts. ~10k attendees. Moderate demand impact.", impact:"MED"},
-  {date:"2026-06-26", city:"Valencia", type:"Cultural Event", name:"BIGSOUND Valencia — Day 1", desc:"Jun 26–27. Ciudad de las Artes y las Ciencias. Sold out every year (5 editions). International electronic/pop. High demand Quatre Carreres area.", impact:"HIGH"},
-  {date:"2026-06-13", city:"Málaga", type:"Cultural Event", name:"Starlite Marbella — Opening", desc:"Jun 13 – Aug. Nightly concerts at Cantera de Nagüeles, Marbella. International artists. Strong demand Marbella zone throughout summer.", impact:"MED"},
-
-  // ── SPORTS ────────────────────────────────────────────────────────────────
-  {date:"2026-04-24", city:"Sevilla", type:"Sports Event", name:"MotoGP Spanish Grand Prix — Jerez (Day 1)", desc:"Apr 24–26. Circuito de Jerez, near Sevilla. ~150k total attendance. High demand Sevilla ↔ Jerez corridor. Sevilla airport busy.", impact:"HIGH"},
-  {date:"2026-04-25", city:"Sevilla", type:"Sports Event", name:"MotoGP Spanish Grand Prix — Jerez (Day 2)", desc:"Qualifying day. Strong demand Sevilla ↔ Jerez.", impact:"MED"},
-  {date:"2026-04-26", city:"Sevilla", type:"Sports Event", name:"MotoGP Spanish Grand Prix — Race Day", desc:"Race day. ~80k at circuit. Peak demand on Sevilla↔Jerez routes. Sevilla city also impacted by visitor overflow.", impact:"HIGH"},
-  {date:"2026-09-11", city:"Madrid", type:"Sports Event", name:"F1 Spanish Grand Prix Madrid — Day 1", desc:"Sep 11–13. New Madrid Street Circuit (Madring). First ever F1 street race in Madrid. 200,000+ expected across weekend. Major city disruption.", impact:"HIGH"},
-  {date:"2026-09-12", city:"Madrid", type:"Sports Event", name:"F1 Spanish Grand Prix Madrid — Day 2", desc:"Qualifying day. High demand across Madrid centre and circuit area.", impact:"HIGH"},
-  {date:"2026-09-13", city:"Madrid", type:"Sports Event", name:"F1 Spanish Grand Prix Madrid — Race Day", desc:"Race day. 200,000+ attendees. Street circuit means city-wide closures. Biggest single-day demand event of Q3.", impact:"HIGH"},
+  {date:"2026-01-01",city:"National",type:"Bank Holiday",name:"New Year's Day",desc:"All cities closed.",impact:"HIGH"},
+  {date:"2026-01-06",city:"National",type:"Bank Holiday",name:"Epiphany (Three Kings)",desc:"National holiday. Kings' Day parades Jan 5 evening.",impact:"HIGH"},
+  {date:"2026-03-19",city:"National",type:"Bank Holiday",name:"St. Joseph's Day",desc:"National holiday.",impact:"MED"},
+  {date:"2026-04-02",city:"National",type:"Bank Holiday",name:"Maundy Thursday",desc:"National holiday. Mass movement of people.",impact:"HIGH"},
+  {date:"2026-04-03",city:"National",type:"Bank Holiday",name:"Good Friday",desc:"National holiday. Major processions in Sevilla, Málaga.",impact:"HIGH"},
+  {date:"2026-05-01",city:"National",type:"Bank Holiday",name:"Labour Day",desc:"National holiday. Long weekend. High leisure demand.",impact:"HIGH"},
+  {date:"2026-08-15",city:"National",type:"Bank Holiday",name:"Assumption of the Virgin",desc:"National holiday. Beach cities peak.",impact:"MED"},
+  {date:"2026-10-12",city:"National",type:"Bank Holiday",name:"National Day of Spain",desc:"Monday holiday. Long weekend.",impact:"MED"},
+  {date:"2026-12-08",city:"National",type:"Bank Holiday",name:"Immaculate Conception",desc:"National holiday. 4-day weekend with Dec 6.",impact:"MED"},
+  {date:"2026-12-25",city:"National",type:"Bank Holiday",name:"Christmas Day",desc:"National holiday.",impact:"MED"},
+  {date:"2026-05-02",city:"Madrid",type:"Regional Holiday",name:"Community of Madrid Day",desc:"Regional holiday. Long weekend May 1–3.",impact:"MED"},
+  {date:"2026-05-15",city:"Madrid",type:"Festival",name:"San Isidro Festival",desc:"Madrid patron saint. Parades, concerts, fiestas in Retiro and La Latina.",impact:"HIGH"},
+  {date:"2026-04-20",city:"Madrid",type:"Sports Event",name:"Mutua Madrid Open (Tennis)",desc:"ATP/WTA Masters 1000. Caja Mágica. Apr 20–May 3. ~180k attendees.",impact:"MED"},
+  {date:"2026-06-06",city:"Madrid",type:"Cultural Event",name:"Pope Leo XIV Visit — Madrid",desc:"~1.8M expected. Plaza de Cibeles Mass Jun 7. Massive road closures Jun 6–9.",impact:"HIGH"},
+  {date:"2026-09-11",city:"Madrid",type:"Sports Event",name:"F1 Spanish Grand Prix — Madrid",desc:"New Madrid Street Circuit. Sep 11–13. 200k+ attendees. Massive city impact.",impact:"HIGH"},
+  {date:"2026-09-12",city:"Madrid",type:"Sports Event",name:"F1 Madrid — Qualifying Day",desc:"High demand across Madrid centre and circuit area.",impact:"HIGH"},
+  {date:"2026-09-13",city:"Madrid",type:"Sports Event",name:"F1 Madrid — Race Day",desc:"200,000+ attendees. Street circuit = city-wide closures.",impact:"HIGH"},
+  {date:"2026-05-30",city:"Madrid",type:"Cultural Event",name:"Bad Bunny — Estadio Metropolitano (Night 1)",desc:"Night 1 of 10. 70,000+ capacity. Metro L7. High demand 20:00–01:00 Canillejas/San Blas.",impact:"HIGH"},
+  {date:"2026-05-31",city:"Madrid",type:"Cultural Event",name:"Bad Bunny — Estadio Metropolitano (Night 2)",desc:"Night 2 of 10. 70,000+ capacity. High late-night demand.",impact:"HIGH"},
+  {date:"2026-06-02",city:"Madrid",type:"Cultural Event",name:"Bad Bunny — Estadio Metropolitano (Night 3)",desc:"Night 3 of 10. Coincides with Pope visit week — double demand pressure.",impact:"HIGH"},
+  {date:"2026-06-03",city:"Madrid",type:"Cultural Event",name:"Bad Bunny — Estadio Metropolitano (Night 4)",desc:"Night 4 of 10. 70,000+ per night.",impact:"HIGH"},
+  {date:"2026-06-06",city:"Madrid",type:"Cultural Event",name:"Bad Bunny — Estadio Metropolitano (Night 5)",desc:"Night 5 of 10. Coincides with Pope arrival — extreme dual demand.",impact:"HIGH"},
+  {date:"2026-06-07",city:"Madrid",type:"Cultural Event",name:"Bad Bunny — Estadio Metropolitano (Night 6)",desc:"Night 6 of 10. Coincides with Pope Cibeles Mass — dual mega-event.",impact:"HIGH"},
+  {date:"2026-06-10",city:"Madrid",type:"Cultural Event",name:"Bad Bunny — Estadio Metropolitano (Night 7)",desc:"Night 7 of 10. 70,000+ capacity.",impact:"HIGH"},
+  {date:"2026-06-11",city:"Madrid",type:"Cultural Event",name:"Bad Bunny — Estadio Metropolitano (Night 8)",desc:"Night 8 of 10. High late-night demand Canillejas/San Blas.",impact:"HIGH"},
+  {date:"2026-06-14",city:"Madrid",type:"Cultural Event",name:"Bad Bunny — Estadio Metropolitano (Night 9)",desc:"Night 9 of 10. 70,000+ capacity.",impact:"HIGH"},
+  {date:"2026-06-15",city:"Madrid",type:"Cultural Event",name:"Bad Bunny — Estadio Metropolitano (Night 10 — Final)",desc:"Final night. Highest post-concert demand. 700,000+ total across 10 nights.",impact:"HIGH"},
+  {date:"2026-07-08",city:"Madrid",type:"Cultural Event",name:"Mad Cool Festival — Day 1",desc:"Jul 8–11. ~60k/day. Valdebebas (north Madrid). Foo Fighters, Twenty One Pilots.",impact:"HIGH"},
+  {date:"2026-07-09",city:"Madrid",type:"Cultural Event",name:"Mad Cool Festival — Day 2",desc:"Florence + The Machine, Lorde. High demand north Madrid 16:00–03:00.",impact:"HIGH"},
+  {date:"2026-07-10",city:"Madrid",type:"Cultural Event",name:"Mad Cool Festival — Day 3",desc:"Twenty One Pilots, Kings of Leon.",impact:"HIGH"},
+  {date:"2026-07-11",city:"Madrid",type:"Cultural Event",name:"Mad Cool Festival — Day 4 (Final)",desc:"Nick Cave, Pulp. Highest demand of the 4 days.",impact:"HIGH"},
+  {date:"2026-06-23",city:"Madrid",type:"Festival",name:"Noche de San Juan — Madrid",desc:"Celebrations across city parks and squares. Notable late-night demand.",impact:"MED"},
+  {date:"2026-02-26",city:"Barcelona",type:"Festival",name:"Mobile World Congress",desc:"MWC 2026. Feb 23–26. ~100k attendees. Fira Gran Via. High demand L'Hospitalet/airport.",impact:"HIGH"},
+  {date:"2026-04-23",city:"Barcelona",type:"Cultural Event",name:"Sant Jordi's Day",desc:"Barcelona's Valentine's Day. Massive street activity on Las Ramblas.",impact:"MED"},
+  {date:"2026-06-04",city:"Barcelona",type:"Cultural Event",name:"Primavera Sound — Day 1",desc:"Jun 4–6. 75,000/day at Parc del Fòrum. High demand northeast Barcelona.",impact:"HIGH"},
+  {date:"2026-06-05",city:"Barcelona",type:"Cultural Event",name:"Primavera Sound — Day 2",desc:"75,000 attendees. Strong late-night demand.",impact:"HIGH"},
+  {date:"2026-06-06",city:"Barcelona",type:"Cultural Event",name:"Primavera Sound — Day 3 (Final)",desc:"75,000 attendees. High demand 16:00–03:00.",impact:"HIGH"},
+  {date:"2026-06-09",city:"Barcelona",type:"Cultural Event",name:"Pope Leo XIV Visit — Barcelona",desc:"Jun 9–11. Sagrada Família Mass, Olympic Stadium, Montserrat. Road closures.",impact:"HIGH"},
+  {date:"2026-06-18",city:"Barcelona",type:"Cultural Event",name:"Sónar — Day 1",desc:"Jun 18–20. ~120k total. Sónar by Night at Fira Gran Via until 06:00.",impact:"HIGH"},
+  {date:"2026-06-19",city:"Barcelona",type:"Cultural Event",name:"Sónar — Day 2",desc:"Extreme late-night demand L'Hospitalet area.",impact:"HIGH"},
+  {date:"2026-06-20",city:"Barcelona",type:"Cultural Event",name:"Sónar — Day 3 (Final)",desc:"Full day + night programme.",impact:"HIGH"},
+  {date:"2026-06-23",city:"Barcelona",type:"Festival",name:"Sant Joan Eve — Barcelona",desc:"Biggest night of the year. Bonfires across all beaches. Extremely high demand 22:00–04:00.",impact:"HIGH"},
+  {date:"2026-06-24",city:"Barcelona",type:"Regional Holiday",name:"Sant Joan — Barcelona",desc:"Regional holiday. Continued beach activity.",impact:"MED"},
+  {date:"2026-07-08",city:"Barcelona",type:"Cultural Event",name:"Cruïlla Festival — Day 1",desc:"Jul 8–11. Parc del Fòrum. ~30k/day.",impact:"MED"},
+  {date:"2026-09-11",city:"Barcelona",type:"Cultural Event",name:"Diada de Catalunya",desc:"Catalan National Day. Large demonstrations on Passeig de Gràcia.",impact:"MED"},
+  {date:"2026-09-24",city:"Barcelona",type:"Festival",name:"La Mercè Festival",desc:"Sep 19–25. Barcelona's biggest city festival. Free concerts, human towers, fire runs.",impact:"HIGH"},
+  {date:"2026-03-29",city:"Sevilla",type:"Festival",name:"Semana Santa — Sevilla",desc:"Mar 29–Apr 5. Biggest Holy Week in Spain. Road closures throughout historic centre.",impact:"HIGH"},
+  {date:"2026-04-20",city:"Sevilla",type:"Festival",name:"Feria de Abril — Sevilla",desc:"Apr 20–26. 1,000+ casetas. Los Remedios. High late-night demand all week.",impact:"HIGH"},
+  {date:"2026-04-24",city:"Sevilla",type:"Sports Event",name:"MotoGP Jerez — Day 1",desc:"Apr 24–26. ~150k total. High demand Sevilla ↔ Jerez corridor.",impact:"HIGH"},
+  {date:"2026-04-25",city:"Sevilla",type:"Sports Event",name:"MotoGP Jerez — Qualifying",desc:"Strong demand Sevilla ↔ Jerez.",impact:"MED"},
+  {date:"2026-04-26",city:"Sevilla",type:"Sports Event",name:"MotoGP Jerez — Race Day",desc:"~80k at circuit. Peak demand Sevilla↔Jerez.",impact:"HIGH"},
+  {date:"2026-05-15",city:"Sevilla",type:"Cultural Event",name:"Festival Interestelar Sevilla",desc:"May 15–16. ~10k attendees.",impact:"MED"},
+  {date:"2026-03-15",city:"Valencia",type:"Festival",name:"Las Fallas",desc:"Mar 15–19. Burning of monuments Mar 19. High demand all week.",impact:"HIGH"},
+  {date:"2026-06-23",city:"Valencia",type:"Festival",name:"Noche de San Juan — Valencia",desc:"Beach celebrations at Malvarrosa, Patacona. Very high demand 21:00–04:00.",impact:"HIGH"},
+  {date:"2026-06-26",city:"Valencia",type:"Cultural Event",name:"BIGSOUND Valencia — Day 1",desc:"Jun 26–27. Ciudad de las Artes. International electronic/pop.",impact:"HIGH"},
+  {date:"2026-10-09",city:"Valencia",type:"Regional Holiday",name:"Valencian Community Day",desc:"Regional holiday. Parades in city centre.",impact:"MED"},
+  {date:"2026-03-29",city:"Málaga",type:"Festival",name:"Semana Santa — Málaga",desc:"Mar 29–Apr 5. High tourism. Road closures historic centre.",impact:"HIGH"},
+  {date:"2026-06-13",city:"Málaga",type:"Cultural Event",name:"Starlite Marbella — Opening",desc:"Jun 13–Aug. Nightly concerts at Cantera de Nagüeles, Marbella.",impact:"MED"},
+  {date:"2026-06-23",city:"Málaga",type:"Festival",name:"Noche de San Juan — Málaga",desc:"Beach celebrations at La Misericordia and La Malagueta. High late-night demand.",impact:"HIGH"},
+  {date:"2026-07-09",city:"Málaga",type:"Cultural Event",name:"Weekend Beach Festival — Day 1",desc:"Jul 9–11. Torre del Mar beach. High demand Málaga east zone.",impact:"MED"},
+  {date:"2026-08-15",city:"Málaga",type:"Festival",name:"Feria de Málaga",desc:"Aug 15–22. Largest summer fair in southern Spain. Very high demand.",impact:"HIGH"},
+  {date:"2026-06-20",city:"Alicante",type:"Festival",name:"Hogueras de San Juan — Opening",desc:"Festival opens Jun 20. Festivities build across the week.",impact:"MED"},
+  {date:"2026-06-24",city:"Alicante",type:"Festival",name:"Hogueras de San Juan — La Cremà",desc:"Burning of monuments Jun 24. Extremely high demand beachfront zones.",impact:"HIGH"},
+  {date:"2026-10-09",city:"Zaragoza",type:"Festival",name:"Fiestas del Pilar — Start",desc:"Oct 9–18. Largest festival in Aragon. ~1M visitors.",impact:"HIGH"},
+  {date:"2026-10-12",city:"Zaragoza",type:"Festival",name:"Fiestas del Pilar — National Day (peak)",desc:"Oct 12 = National Day + peak of Fiestas del Pilar. Biggest single day of the year.",impact:"HIGH"},
+  {date:"2026-06-04",city:"Toledo",type:"Cultural Event",name:"Corpus Christi — Toledo",desc:"Most important Corpus Christi in Spain. Massive procession. Tourist influx.",impact:"HIGH"},
+  {date:"2026-06-23",city:"A Coruña",type:"Festival",name:"Noche de San Juan — A Coruña",desc:"One of the biggest San Juan celebrations in Galicia. Bonfires on beaches.",impact:"HIGH"},
+  {date:"2026-07-25",city:"A Coruña",type:"Regional Holiday",name:"Galicia Day (St. James)",desc:"Regional holiday. Pilgrim arrivals to Santiago peak.",impact:"HIGH"},
+  {date:"2026-03-29",city:"Murcia",type:"Festival",name:"Semana Santa — Murcia",desc:"Mar 29–Apr 5. Famous floats. Road closures.",impact:"MED"},
+  {date:"2026-09-07",city:"Murcia",type:"Festival",name:"Feria de Murcia",desc:"Patron saint pilgrimage. Road closures in city centre.",impact:"MED"},
+  {date:"2026-07-06",city:"Pamplona",type:"Festival",name:"San Fermín — Running of the Bulls",desc:"Jul 6–14. ~1M visitors. Bull runs 08:00 daily. Huge crowds all day.",impact:"HIGH"},
+  {date:"2026-03-29",city:"Supply",type:"Supply Alert",name:"Easter Holiday — Driver Supply Drop",desc:"20–30% driver supply drop across all cities Easter week.",impact:"HIGH"},
+  {date:"2026-08-01",city:"Supply",type:"Supply Alert",name:"August Driver Supply Warning",desc:"15–25% supply drop in all cities. Demand spikes at airports and beach zones.",impact:"HIGH"},
+  {date:"2026-12-24",city:"Supply",type:"Supply Alert",name:"Christmas Eve — Supply Drop",desc:"Driver supply significantly reduced from afternoon.",impact:"HIGH"},
+  {date:"2026-12-31",city:"Supply",type:"Supply Alert",name:"New Year's Eve — Peak Demand",desc:"Highest demand night of the year.",impact:"HIGH"},
 ];
 
-// ─── STATE ───────────────────────────────────────────────────────────────────
 const TODAY = new Date();
-let state = {
-  city: "All Cities",
-  group: "All",
-  year: 2026,
-  month: 4,
-};
+let state = {city:"All Cities",group:"All",year:2026,month:4};
 
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
-const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-const DAYS_OF_WEEK = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DAYS_OF_WEEK=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 
 function getActiveCities(){
   if(state.group==="LTO") return LTO_CITIES;
   if(state.group==="Non-LTO") return NON_LTO_CITIES;
-  // group=All: if a single city is selected use that
-  if(state.city !== "All Cities") return [state.city];
-  return [...LTO_CITIES, ...NON_LTO_CITIES];
+  if(state.city!=="All Cities") return [state.city];
+  return [...LTO_CITIES,...NON_LTO_CITIES];
 }
 
-function getEventsForDate(dateStr, city){
-  const activeCities = getActiveCities();
-  return EVENTS.filter(e => {
-    if(e.date !== dateStr) return false;
-    if(e.city === "National" || e.city === "Supply") return true;
+function getEventsForDate(dateStr){
+  const activeCities=getActiveCities();
+  return EVENTS.filter(e=>{
+    if(e.date!==dateStr) return false;
+    if(e.city==="National"||e.city==="Supply") return true;
     return activeCities.includes(e.city);
   });
 }
 
 function eventColor(e){
-  if(e.city === "National") return {bg:"#dcfce7", color:"#166534"};
-  if(e.city === "Supply")   return {bg:"#fff7ed", color:"#c2410c"};
-  const bg = CITY_BG[e.city] || "#f3f4f6";
-  const color = CITY_COLORS[e.city] || "#374151";
-  return {bg, color};
+  if(e.city==="National") return {bg:"#dcfce7",color:"#166534"};
+  if(e.city==="Supply") return {bg:"#fff7ed",color:"#c2410c"};
+  return {bg:CITY_BG[e.city]||"#f3f4f6",color:CITY_COLORS[e.city]||"#374151"};
 }
 
 function impactLabel(impact){
-  if(impact==="HIGH") return {cls:"impact-high", label:"⚡ High Impact"};
-  if(impact==="MED")  return {cls:"impact-med",  label:"⚠ Medium Impact"};
-  return {cls:"impact-low", label:"↓ Low Impact"};
+  if(impact==="HIGH") return {cls:"impact-high",label:"⚡ High Impact"};
+  if(impact==="MED") return {cls:"impact-med",label:"⚠ Medium Impact"};
+  return {cls:"impact-low",label:"↓ Low Impact"};
 }
 
-function pad(n){ return String(n).padStart(2,"0"); }
-function dateStr(y,m,d){ return `${y}-${pad(m+1)}-${pad(d)}`; }
+function pad(n){return String(n).padStart(2,"0");}
+function dateStr(y,m,d){return `${y}-${pad(m+1)}-${pad(d)}`;}
 
-// ─── RENDER ──────────────────────────────────────────────────────────────────
 function buildCalendar(){
-  const {city, year, month} = state;
+  const {year,month,group}=state;
+  const firstDay=new Date(year,month,1);
+  let startDow=firstDay.getDay();
+  startDow=startDow===0?6:startDow-1;
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  const prevMonthDays=new Date(year,month,0).getDate();
 
-  const firstDay = new Date(year, month, 1);
-  let startDow = firstDay.getDay(); // 0=Sun
-  startDow = startDow === 0 ? 6 : startDow - 1; // shift to Mon=0
-
-  const daysInMonth = new Date(year, month+1, 0).getDate();
-  const prevMonthDays = new Date(year, month, 0).getDate();
-
-  const {group} = state;
-  const groupPills = ["All","LTO","Non-LTO"].map(g => {
-    const isActive = group===g;
-    const style = isActive ? "background:#1c2b1c;border-color:#1c2b1c;color:#fff;" : "";
-    const badge = g==="All" ? "" : g==="LTO"
-      ? `<span style="font-size:9px;background:rgba(34,160,107,0.2);color:#166534;padding:1px 5px;border-radius:8px;margin-left:4px;">Madrid · BCN · Málaga</span>`
-      : `<span style="font-size:9px;background:rgba(0,0,0,0.07);color:#666;padding:1px 5px;border-radius:8px;margin-left:4px;">8 cities</span>`;
-    return `<button class="pill${isActive?' active':''}" onclick="setGroup('${g}')" style="${style}">${g}${badge}</button>`;
+  const groupPills=["All","LTO","Non-LTO"].map(g=>{
+    const isActive=group===g;
+    const badge=g==="LTO"?`<span style="font-size:9px;background:rgba(34,160,107,0.2);color:#166534;padding:1px 5px;border-radius:8px;margin-left:4px;">Madrid·BCN·Málaga</span>`:g==="Non-LTO"?`<span style="font-size:9px;background:rgba(0,0,0,0.07);color:#666;padding:1px 5px;border-radius:8px;margin-left:4px;">8 cities</span>`:"";
+    return `<button class="pill${isActive?' active':''}" onclick="setGroup('${g}')">${g}${badge}</button>`;
   }).join("");
 
-  const activeCitiesForPills = group==="LTO" ? LTO_CITIES : group==="Non-LTO" ? NON_LTO_CITIES : CITIES.filter(c=>c!=="All Cities");
-  const cityPills = activeCitiesForPills.map(c => {
-    const isActive = group==="All" && city===c;
-    return `<button class="pill${isActive?' active':''}" onclick="setCity('${c}')">
-      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${CITY_COLORS[c]};margin-right:4px;"></span>${c}
-    </button>`;
+  const activeCitiesForPills=group==="LTO"?LTO_CITIES:group==="Non-LTO"?NON_LTO_CITIES:CITIES.filter(c=>c!=="All Cities");
+  const cityPills=activeCitiesForPills.map(c=>{
+    const isActive=group==="All"&&state.city===c;
+    return `<button class="pill${isActive?' active':''}" onclick="setCity('${c}')"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${CITY_COLORS[c]};margin-right:4px;"></span>${c}</button>`;
   }).join("");
 
-  // Legend
-  const legendItems = [
-    {color:"#166534", bg:"#dcfce7", label:"National Holiday"},
-    {color:"#c2410c", bg:"#fff7ed", label:"Supply Alert"},
-    ...(city==="All Cities" ? Object.entries(CITY_COLORS).filter(([k])=>k!=="All Cities").slice(0,6).map(([k,v])=>({color:v,bg:CITY_BG[k]||"#f3f4f6",label:k})) : [{color:CITY_COLORS[city],bg:CITY_BG[city]||"#f3f4f6",label:city+" Event"}])
-  ];
-
-  const legendHtml = legendItems.map(l=>`
-    <div class="legend-item">
-      <div class="legend-dot" style="background:${l.color};"></div>
-      ${l.label}
-    </div>
-  `).join("");
-
-  // Build day cells
-  let cells = "";
-  let totalCells = startDow + daysInMonth;
-  let rows = Math.ceil(totalCells/7);
-  let totalSlots = rows*7;
-
-  for(let i=0; i<totalSlots; i++){
-    let dayNum, currentMonth=true, cellYear=year, cellMonth=month;
-    if(i < startDow){
-      dayNum = prevMonthDays - startDow + i + 1;
-      currentMonth = false;
-      cellMonth = month-1;
-      if(cellMonth<0){cellMonth=11;cellYear=year-1;}
-    } else if(i >= startDow + daysInMonth){
-      dayNum = i - startDow - daysInMonth + 1;
-      currentMonth = false;
-      cellMonth = month+1;
-      if(cellMonth>11){cellMonth=0;cellYear=year+1;}
-    } else {
-      dayNum = i - startDow + 1;
-    }
-
-    const ds = dateStr(cellYear, cellMonth, dayNum);
-    const events = getEventsForDate(ds, city);
-    const isToday = ds === `${TODAY.getFullYear()}-${pad(TODAY.getMonth()+1)}-${pad(TODAY.getDate())}`;
-    const dow = i%7; // 0=Mon, 6=Sun
-    const isWeekend = dow>=5;
-
-    let eventPills = "";
-    const maxShow = 2;
-    events.slice(0,maxShow).forEach((e,idx)=>{
-      const {bg,color} = eventColor(e);
-      const eidx = EVENTS.indexOf(e);
-      eventPills += `<span class="event-pill" style="background:${bg};color:${color};cursor:pointer;transition:opacity .15s;" onmouseenter="this.style.opacity='.75'" onmouseleave="this.style.opacity='1'" onclick="event.stopPropagation();openEventModal(${eidx})"><strong style="font-weight:700;">${e.type}:</strong> ${e.name}</span>`;
+  let cells="";
+  const rows=Math.ceil((startDow+daysInMonth)/7);
+  for(let i=0;i<rows*7;i++){
+    let dayNum,currentMonth=true,cellYear=year,cellMonth=month;
+    if(i<startDow){dayNum=prevMonthDays-startDow+i+1;currentMonth=false;cellMonth=month-1;if(cellMonth<0){cellMonth=11;cellYear=year-1;}}
+    else if(i>=startDow+daysInMonth){dayNum=i-startDow-daysInMonth+1;currentMonth=false;cellMonth=month+1;if(cellMonth>11){cellMonth=0;cellYear=year+1;}}
+    else{dayNum=i-startDow+1;}
+    const ds=dateStr(cellYear,cellMonth,dayNum);
+    const events=getEventsForDate(ds);
+    const isToday=ds===`${TODAY.getFullYear()}-${pad(TODAY.getMonth()+1)}-${pad(TODAY.getDate())}`;
+    const dow=i%7;
+    const isWeekend=dow>=5;
+    let eventPills="";
+    events.slice(0,2).forEach((e,idx)=>{
+      const {bg,color}=eventColor(e);
+      const eidx=EVENTS.indexOf(e);
+      eventPills+=`<span class="event-pill" style="background:${bg};color:${color};cursor:pointer;" onclick="event.stopPropagation();openEventModal(${eidx})"><strong>${e.type}:</strong> ${e.name}</span>`;
     });
-    if(events.length > maxShow){
-      const remaining = events.slice(maxShow);
-      eventPills += `<div class="more-events" style="cursor:pointer;" onclick="event.stopPropagation();openDayModal('${ds}')"">+${events.length-maxShow} more</div>`;
-    }
-
-    const hasEvents = events.length > 0;
-    cells += `
-      <div class="day${!currentMonth?' other-month':''}${isToday?' today':''}"
-        style="${!currentMonth?'':''}cursor:default;">
-        <div class="day-num${isWeekend?' weekend':''}">${dayNum}</div>
-        ${eventPills}
-      </div>
-    `;
+    if(events.length>2) eventPills+=`<div class="more-events" style="cursor:pointer;" onclick="event.stopPropagation();openDayModal('${ds}')">+${events.length-2} more</div>`;
+    cells+=`<div class="day${!currentMonth?' other-month':''}${isToday?' today':''}"><div class="day-num${isWeekend?' weekend':''}">${dayNum}</div>${eventPills}</div>`;
   }
 
-  // Count events this month
-  let monthEvents = 0;
-  for(let d=1;d<=daysInMonth;d++){
-    monthEvents += getEventsForDate(dateStr(year,month,d), city).length;
-  }
+  let monthEvents=0;
+  for(let d=1;d<=daysInMonth;d++) monthEvents+=getEventsForDate(dateStr(year,month,d)).length;
 
-  document.getElementById("root").innerHTML = `
+  document.getElementById("root").innerHTML=`
     <div class="topbar">
-      <div style="display:flex;align-items:center;gap:0;">
+      <div style="display:flex;align-items:center;">
         <span class="topbar-logo">Bolt</span>
         <div style="width:1px;height:18px;background:rgba(255,255,255,0.15);margin:0 14px;"></div>
         <span class="topbar-title">Demand Calendar 2026</span>
       </div>
-      <div class="topbar-right">
-        <span style="background:#22a06b;color:#fff;font-size:11px;font-weight:500;padding:4px 10px;border-radius:4px;">
-          ${monthEvents} events this month
-        </span>
-      </div>
+      <div class="topbar-right"><span style="background:#22a06b;color:#fff;font-size:11px;font-weight:500;padding:4px 10px;border-radius:4px;">${monthEvents} events this month</span></div>
     </div>
-
     <div class="filter-panel" style="flex-direction:column;align-items:flex-start;gap:10px;">
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;width:100%;">
-        <span class="filter-label" style="min-width:60px;">Group</span>
-        ${groupPills}
-      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;width:100%;"><span class="filter-label" style="min-width:60px;">Group</span>${groupPills}</div>
       <div style="width:100%;height:1px;background:#f0f0f0;"></div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;">
-        <span class="filter-label" style="min-width:60px;">City</span>
-        ${cityPills}
-      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;"><span class="filter-label" style="min-width:60px;">City</span>${cityPills}</div>
     </div>
-
     <div class="cal-nav">
       <button class="nav-btn" onclick="prevMonth()">← Previous</button>
       <div class="cal-nav-title">${MONTHS[month]} ${year}</div>
       <button class="nav-btn" onclick="nextMonth()">Next →</button>
     </div>
-
-    <div class="legend">${legendHtml}</div>
-
     <div class="cal-wrap">
-      <div class="cal-header">
-        ${DAYS_OF_WEEK.map(d=>`<div class="cal-header-cell">${d}</div>`).join("")}
-      </div>
+      <div class="cal-header">${DAYS_OF_WEEK.map(d=>`<div class="cal-header-cell">${d}</div>`).join("")}</div>
       <div class="cal-grid">${cells}</div>
-    </div>
-  `;
+    </div>`;
 }
 
 function renderEventHtml(e){
   const {bg,color}=eventColor(e);
   const imp=impactLabel(e.impact);
-  const cityLabel=e.city==="National"?"🇪🇸 National":e.city==="Supply"?"⚠ Supply":e.city;
-  return `
-    <div class="modal-event" style="background:${bg};">
-      <div class="modal-event-type" style="color:${color};">${e.type} · ${cityLabel}</div>
-      <div class="modal-event-name">${e.name}</div>
-      <div class="modal-event-desc">${e.desc}</div>
-      <span class="modal-impact ${imp.cls}">${imp.label}</span>
-    </div>`;
+  return `<div class="modal-event" style="background:${bg};"><div class="modal-event-type" style="color:${color};">${e.type} · ${e.city==="National"?"🇪🇸 National":e.city==="Supply"?"⚠ Supply":e.city}</div><div class="modal-event-name">${e.name}</div><div class="modal-event-desc">${e.desc}</div><span class="modal-impact ${imp.cls}">${imp.label}</span></div>`;
 }
 
 function openEventModal(idx){
-  const e = EVENTS[idx];
-  if(!e) return;
-  const d = new Date(e.date+"T12:00:00");
-  const dateLabel = d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
-  document.getElementById("modal-content").innerHTML = `
-    <button class="modal-close" onclick="closeModal()">✕</button>
-    <div class="modal-date">${dateLabel}</div>
-    <div class="modal-title">${e.name}</div>
-    ${renderEventHtml(e)}
-  `;
+  const e=EVENTS[idx];if(!e)return;
+  const d=new Date(e.date+"T12:00:00");
+  const dateLabel=d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  document.getElementById("modal-content").innerHTML=`<button class="modal-close" onclick="closeModal()">✕</button><div class="modal-date">${dateLabel}</div><div class="modal-title">${e.name}</div>${renderEventHtml(e)}`;
   document.getElementById("modal-overlay").classList.add("open");
 }
 
 function openDayModal(ds){
-  const events = getEventsForDate(ds, state.city);
-  if(!events.length) return;
-  const d = new Date(ds+"T12:00:00");
-  const dateLabel = d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
-  document.getElementById("modal-content").innerHTML = `
-    <button class="modal-close" onclick="closeModal()">✕</button>
-    <div class="modal-date">${dateLabel}</div>
-    <div class="modal-title">${events.length} events on this day</div>
-    ${events.map(e=>renderEventHtml(e)).join("")}
-  `;
+  const events=getEventsForDate(ds);if(!events.length)return;
+  const d=new Date(ds+"T12:00:00");
+  const dateLabel=d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  document.getElementById("modal-content").innerHTML=`<button class="modal-close" onclick="closeModal()">✕</button><div class="modal-date">${dateLabel}</div><div class="modal-title">${events.length} events on this day</div>${events.map(e=>renderEventHtml(e)).join("")}`;
   document.getElementById("modal-overlay").classList.add("open");
 }
 
-function openModal(ds){
-  openDayModal(ds);
-}
+function closeModal(e){if(!e||e.target===document.getElementById("modal-overlay")) document.getElementById("modal-overlay").classList.remove("open");}
+function setGroup(g){state.group=g;state.city="All Cities";buildCalendar();}
+function setCity(c){state.city=c;state.group="All";buildCalendar();}
+function prevMonth(){state.month--;if(state.month<0){state.month=11;state.year--;}buildCalendar();}
+function nextMonth(){state.month++;if(state.month>11){state.month=0;state.year++;}buildCalendar();}
 
-function closeModal(e){
-  if(!e || e.target===document.getElementById("modal-overlay")){
-    document.getElementById("modal-overlay").classList.remove("open");
-  }
-}
-
-// ─── ACTIONS ─────────────────────────────────────────────────────────────────
-function setGroup(g){ state.group=g; state.city="All Cities"; buildCalendar(); }
-function setCity(c){ state.city=c; state.group="All"; buildCalendar(); }
-function prevMonth(){
-  state.month--;
-  if(state.month<0){state.month=11;state.year--;}
-  buildCalendar();
-}
-function nextMonth(){
-  state.month++;
-  if(state.month>11){state.month=0;state.year++;}
-  buildCalendar();
-}
-
-// Start on current month
-state.month = TODAY.getMonth();
-state.year = TODAY.getFullYear() < 2026 ? 2026 : TODAY.getFullYear();
-if(state.year > 2026) state.year = 2026;
+state.month=TODAY.getMonth();
+state.year=TODAY.getFullYear()<2026?2026:TODAY.getFullYear();
+if(state.year>2026)state.year=2026;
 buildCalendar();
 </script>
 </body>
